@@ -1,0 +1,11 @@
+.git
+**/.dart_tool
+**/.pub-cache
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/build
+cultur_backend/data
+deploy/data/web
+deploy/releases/*.apk
+yamtrack_tree.json

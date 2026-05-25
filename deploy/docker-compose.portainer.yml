@@ -1,14 +1,9 @@
-# Portainer stack — NO env_file; all secrets via Portainer UI.
-# Caddy config is embedded (no Caddyfile bind mount).
+# Portainer stack — NO env_file; secrets in Portainer UI only.
 #
-# Git push sends THIS FILE + scripts + cultur_backend/ + cultur_app/ — NOT:
-#   deploy/.env, deploy/data/web/*, deploy/releases/*.apk (see deploy/WHAT_GOES_TO_GIT.md)
+# Web: service "cultur-web" builds Flutter automatically on stack deploy (first time ~10–15 min).
+# Faster option: use image from GitHub Actions — see deploy/docs/PORTAINER.md
 #
-# On the server you MUST:
-#   1. git clone full repo (not only this yaml)
-#   2. ./deploy/scripts/build-web.sh  → creates deploy/data/web/
-#   3. Set vars in Portainer from deploy/portainer.env.example
-#   4. Optional: CULTUR_DEPLOY_DIR=/absolute/path/to/cultur/deploy
+# Git clone must include cultur_app/ + cultur_backend/ (repo root as build context ..)
 
 name: cultur
 
@@ -20,12 +15,12 @@ configs:
       }
       http://{$CULTUR_DOMAIN} {
       	encode gzip zstd
-      	root * /srv/web
-      	try_files {path} /index.html
-      	file_server
       	handle_path /releases/* {
       		root * /srv/releases
       		file_server
+      	}
+      	handle {
+      		reverse_proxy cultur-web:80
       	}
       }
       http://{$CULTUR_API_DOMAIN} {
@@ -51,6 +46,18 @@ services:
       timeout: 5s
       retries: 10
       start_period: 5s
+    networks:
+      - cultur
+
+  cultur-web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+      args:
+        CULTUR_DEFAULT_API_URL: ${CULTUR_DEFAULT_API_URL:-}
+        CULTUR_ANDROID_APK_URL: ${CULTUR_ANDROID_APK_URL:-}
+    image: cultur-cultur-web:latest
+    restart: unless-stopped
     networks:
       - cultur
 
@@ -107,10 +114,10 @@ services:
       - source: cultur_caddyfile
         target: /etc/caddy/Caddyfile
     volumes:
-      - ${CULTUR_DEPLOY_DIR:-.}/data/web:/srv/web:ro
       - ${CULTUR_DEPLOY_DIR:-.}/releases:/srv/releases:ro
     depends_on:
       - cultur-api
+      - cultur-web
     networks:
       - cultur
 

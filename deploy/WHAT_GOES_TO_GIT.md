@@ -21,7 +21,7 @@ O ficheiro `docker-compose.portainer.yml` **só descreve** o deploy. O `git push
 |---------|------------|
 | `deploy/.env` | Portainer UI ou servidor |
 | `cultur_backend/.env` | Portainer UI ou servidor |
-| `deploy/data/web/*` (exceto `.gitkeep`) | `./deploy/scripts/build-web.sh` no servidor |
+| `deploy/data/web/*` (exceto `.gitkeep`) | Build automático: contentor `cultur-web` no stack Portainer |
 | `deploy/releases/*.apk` | Copiar APK para `deploy/releases/` |
 | `cultur_backend/data/` | Runtime da API |
 

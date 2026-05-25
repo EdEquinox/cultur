@@ -5,20 +5,35 @@ Sim — **é mais fácil no dia a dia** se já usas Portainer. Continua a ser o 
 O Portainer **não substitui**:
 
 - **Cloudflare Tunnel** (ingress `http://127.0.0.1:8080`)
-- **DNS** (CNAME `cultur` / `api.cultur` → túnel) — sem isto o browser não abre o site
-- **Build da web** (`./deploy/scripts/build-web.sh` ou ZIP do GitHub Release)
+- **DNS** (CNAME `cultur` / `api.cultur` → túnel)
 
-## 1. Código no servidor
+## Build automático da web
 
-O stack precisa do repositório no disco (build da API e pastas `deploy/data/web`):
+O stack inclui o serviço **`cultur-web`**, que faz `flutter build web` dentro do Docker na primeira vez que fazes deploy (ou redeploy com rebuild). **Não precisas** de `build-web.sh` no servidor.
 
-```bash
-git clone https://github.com/TEU_USER/cultur.git /opt/cultur
-cd /opt/cultur
-cp cultur_backend/.env.example cultur_backend/.env   # editar
-cp deploy/.env.example deploy/.env                   # editar
-./deploy/scripts/build-web.sh
+| Modo | Tempo no servidor | Como |
+|------|-------------------|------|
+| **Auto (default)** | ~10–15 min na 1.ª vez | Portainer faz build de `deploy/Dockerfile.web` |
+| **Imagem GitHub** | ~1 min | CI publica `ghcr.io/EdEquinox/cultur-web:main` — ver abaixo |
+
+Na UI do Portainer, define também (para o build Flutter):
+
+```env
+CULTUR_DEFAULT_API_URL=https://api.cultur.eqnox.com
+CULTUR_ANDROID_APK_URL=https://cultur.eqnox.com/releases/cultur.apk
 ```
+
+### Modo rápido (imagem pré-construída no GitHub)
+
+A cada push em `main`, o workflow `publish-web-image.yml` constrói e publica a imagem web.
+
+No Portainer, no serviço `cultur-web`, podes trocar temporariamente para só pull (sem build local): edita o stack e usa `image: ghcr.io/EdEquinox/cultur-web:main` e remove o bloco `build:` — ou espera pelo rebuild automático no servidor.
+
+Torna o package **public** em GitHub → Packages → `cultur-web` → Package settings, se o Portainer não conseguir fazer pull.
+
+## 1. Repositório Git no Portainer
+
+O clone tem de ser o **repo completo** (`cultur_app/`, `cultur_backend/`, `deploy/`), não só o ficheiro compose.
 
 ## 2. Criar stack no Portainer
 
@@ -52,13 +67,11 @@ O ficheiro `deploy/docker-compose.portainer.yml` **não usa `env_file:`** — as
 
 Não uses o campo “Load variables from .env file” a menos que esse ficheiro exista **no caminho do stack no servidor**. A UI sozinha chega.
 
-`CULTUR_DEFAULT_API_URL` / APK são só para `build-web.sh`, não para o stack Docker.
-
 ## 4. Deploy
 
-**Deploy the stack**. A primeira vez faz build da imagem `cultur-api` (demora alguns minutos).
+**Deploy the stack**. A primeira vez faz build de **`cultur-web`** (Flutter) e **`cultur-api`** — pode demorar 15–20 minutos no total.
 
-Logs úteis: contentor `cultur-caddy-1`, `cultur-cultur-api-1`.
+Logs úteis: `cultur-cultur-web-1`, `cultur-cultur-api-1`, `cultur-caddy-1`.
 
 ## 5. Cloudflare (igual)
 
@@ -80,12 +93,7 @@ sudo rm -rf /data/compose/70/deploy/Caddyfile.tunnel
 
 2. Usa o `docker-compose.portainer.yml` atualizado (Caddy embutido no compose — já não monta `Caddyfile.tunnel`).
 
-3. Garante que existe **`data/web`** com o build Flutter:
-
-```bash
-cd /data/compose/70   # raiz do clone Git
-./deploy/scripts/build-web.sh
-```
+3. Com o stack novo, **`data/web` no host já não é obrigatório** — a web corre no contentor `cultur-web`.
 
 4. Na UI do Portainer, opcionalmente:
 
