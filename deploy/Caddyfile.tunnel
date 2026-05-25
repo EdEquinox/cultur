@@ -1,0 +1,22 @@
+# Use behind Cloudflare Tunnel — TLS terminates at Cloudflare, Caddy serves HTTP only.
+{
+	auto_https off
+}
+
+http://{$CULTUR_DOMAIN} {
+	encode gzip zstd
+
+	root * /srv/web
+	try_files {path} /index.html
+	file_server
+
+	handle_path /releases/* {
+		root * /srv/releases
+		file_server
+	}
+}
+
+http://{$CULTUR_API_DOMAIN} {
+	encode gzip
+	reverse_proxy cultur-api:8787
+}

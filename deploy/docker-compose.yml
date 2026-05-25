@@ -38,6 +38,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    ports:
+      # Local health check while DNS/TLS is not ready (not required once Caddy serves HTTPS)
+      - "127.0.0.1:8787:8787"
     networks:
       - cultur
     # If MusicBrainz TLS fails in Docker, switch to network_mode: host and set

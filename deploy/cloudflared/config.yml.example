@@ -1,0 +1,19 @@
+# Copy to your cloudflared config (path depends on install: /etc/cloudflared/config.yml
+# or ~/.cloudflared/config.yml). Replace TUNNEL_ID and credentials path.
+#
+# Create the tunnel in Cloudflare Zero Trust → Networks → Tunnels, then:
+#   cloudflared tunnel login
+#   cloudflared tunnel create cultur
+#   cloudflared tunnel route dns cultur cultur.eqnox.com
+#   cloudflared tunnel route dns cultur api.cultur.eqnox.com
+
+tunnel: cultur
+credentials-file: /etc/cloudflared/TUNNEL_ID.json
+
+ingress:
+  # Both hostnames hit Caddy on :80; Caddy routes by Host header (see Caddyfile.tunnel).
+  - hostname: cultur.eqnox.com
+    service: http://127.0.0.1:8080
+  - hostname: api.cultur.eqnox.com
+    service: http://127.0.0.1:8080
+  - service: http_status:404

@@ -29,9 +29,11 @@ flutter run
 
 On first launch, set the API URL (e.g. `http://localhost:8787` or `https://api.your-domain.com`).
 
-## Production (exposed server + HTTPS)
+## Production
 
-See [`deploy/README.md`](deploy/README.md). Summary:
+**Cloudflare Tunnel (home server):** [`deploy/docs/CLOUDFLARE_TUNNEL.md`](deploy/docs/CLOUDFLARE_TUNNEL.md)
+
+**Direct HTTPS (public IP):** [`deploy/README.md`](deploy/README.md). Summary:
 
 1. Point DNS `A` records for your app domain and API subdomain to the server.
 2. Copy `deploy/.env.example` → `deploy/.env` and `cultur_backend/.env.example` → `cultur_backend/.env`.

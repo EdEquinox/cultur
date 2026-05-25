@@ -2,13 +2,27 @@
 
 Stack: **PostgreSQL** + **API** + **Caddy** (HTTPS, static web, APK downloads).
 
-## Prerequisites
+## Deploy modes
+
+| Mode | When to use | Docs |
+|------|-------------|------|
+| **Cloudflare Tunnel** | Home server, no open ports | [`docs/CLOUDFLARE_TUNNEL.md`](docs/CLOUDFLARE_TUNNEL.md) |
+| **Direct (Caddy + Let's Encrypt)** | Public IP, ports 80/443 open | below |
+
+```bash
+# Cloudflare Tunnel (recommended for home server)
+docker compose -f docker-compose.yml -f docker-compose.cloudflare.yml up -d --build
+```
+
+## Prerequisites (direct mode only)
 
 - A public server with ports **80** and **443** open.
-- Two DNS names pointing at the server, for example:
+- **DNS must exist before HTTPS works.** Create A (or AAAA) records pointing at the server IP, for example:
   - `cultur.example.com` — web app + APK at `/releases/`
   - `api.cultur.example.com` — API
 - Docker and Docker Compose.
+
+If Caddy logs show `NXDOMAIN` or the browser shows a TLS error, the API may still be fine — only certificates are blocked until DNS propagates. After adding records, run `docker compose restart caddy` and `./deploy/scripts/verify-deploy.sh`.
 
 ## 1. Configure secrets
 

@@ -1,0 +1,17 @@
+# Override for Cloudflare Tunnel: Caddy listens on localhost only (no Let's Encrypt).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.cloudflare.yml up -d --build
+#
+# Default host port 8080 avoids conflict with nginx/HA/other services on :80.
+# Point cloudflared ingress at http://127.0.0.1:${CULTUR_HTTP_PORT:-8080} for both hostnames.
+
+services:
+  caddy:
+    ports:
+      - "127.0.0.1:${CULTUR_HTTP_PORT:-8080}:80"
+    environment:
+      ACME_EMAIL: ""
+    volumes:
+      - ./Caddyfile.tunnel:/etc/caddy/Caddyfile:ro
+      - ./data/web:/srv/web:ro
+      - ./releases:/srv/releases:ro
