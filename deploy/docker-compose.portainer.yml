@@ -1,8 +1,8 @@
-# Single stack for Portainer (Cloudflare Tunnel + Caddy on 127.0.0.1:8080).
+# Portainer stack — NO env_file (all vars from Portainer UI "Environment variables").
+# Still requires repo on disk for build context, Caddyfile, and deploy/data/web.
 #
-# Portainer → Stacks → Add stack → Git repository OR Web editor
 # Compose path: deploy/docker-compose.portainer.yml
-# Env: load deploy/.env + cultur_backend/.env (see docs/PORTAINER.md)
+# Copy variables from deploy/portainer.env.example into the stack UI.
 
 name: cultur
 
@@ -10,12 +10,10 @@ services:
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
-    env_file:
-      - ../cultur_backend/.env
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-cultur}
       POSTGRES_USER: ${POSTGRES_USER:-cultur}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in Portainer}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -33,12 +31,33 @@ services:
     build:
       context: ../cultur_backend
     restart: unless-stopped
-    env_file:
-      - ../cultur_backend/.env
     environment:
+      SERVER_API_SECRET_KEY: ${SERVER_API_SECRET_KEY:?set SERVER_API_SECRET_KEY in Portainer}
       SERVER_API_PORT: "8787"
       SERVER_API_DATA_DIR: /app/data
-      SERVER_API_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-cultur}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-cultur}
+      SERVER_API_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-cultur}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cultur}
+      TMDB_API: ${TMDB_API:-}
+      TMDB_LANG: ${TMDB_LANG:-en-US}
+      OMDB_API_KEY: ${OMDB_API_KEY:-}
+      IGDB_CLIENT_ID: ${IGDB_CLIENT_ID:-}
+      IGDB_CLIENT_SECRET: ${IGDB_CLIENT_SECRET:-}
+      IGDB_LANGUAGE: ${IGDB_LANGUAGE:-en}
+      HARDCOVER_API_TOKEN: ${HARDCOVER_API_TOKEN:-}
+      BGG_API_TOKEN: ${BGG_API_TOKEN:-}
+      BGG_MIN_REQUEST_INTERVAL_SECONDS: ${BGG_MIN_REQUEST_INTERVAL_SECONDS:-2}
+      BGG_HOT_CACHE_TTL_SECONDS: ${BGG_HOT_CACHE_TTL_SECONDS:-3600}
+      MUSICBRAINZ_APP_NAME: ${MUSICBRAINZ_APP_NAME:-Cultur}
+      MUSICBRAINZ_CONTACT: ${MUSICBRAINZ_CONTACT:-}
+      MUSICBRAINZ_MIN_REQUEST_INTERVAL_SECONDS: ${MUSICBRAINZ_MIN_REQUEST_INTERVAL_SECONDS:-1.1}
+      FANART_API_KEY: ${FANART_API_KEY:-}
+      FANART_CLIENT_KEY: ${FANART_CLIENT_KEY:-}
+      LASTFM_API_KEY: ${LASTFM_API_KEY:-}
+      LASTFM_HOME_TAG: ${LASTFM_HOME_TAG:-rock}
+      STASH_EVENTS_CACHE_TTL_SECONDS: ${STASH_EVENTS_CACHE_TTL_SECONDS:-21600}
+      STASH_EVENTS_SYNC_PAGE_SIZE: ${STASH_EVENTS_SYNC_PAGE_SIZE:-50}
+      STASH_EVENTS_SYNC_MAX_PAGES: ${STASH_EVENTS_SYNC_MAX_PAGES:-5}
+      BOOK_CATALOG_PRIMARY_SOURCE: ${BOOK_CATALOG_PRIMARY_SOURCE:-hardcover}
+      PORBASE_ISBN_URL_TEMPLATE: ${PORBASE_ISBN_URL_TEMPLATE:-http://urn.porbase.org/isbn/dc/xml?id={isbn}}
     volumes:
       - ../cultur_backend/data:/app/data
     depends_on:
@@ -54,11 +73,9 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:${CULTUR_HTTP_PORT:-8080}:80"
-    env_file:
-      - .env
     environment:
-      CULTUR_DOMAIN: ${CULTUR_DOMAIN}
-      CULTUR_API_DOMAIN: ${CULTUR_API_DOMAIN}
+      CULTUR_DOMAIN: ${CULTUR_DOMAIN:?set CULTUR_DOMAIN in Portainer}
+      CULTUR_API_DOMAIN: ${CULTUR_API_DOMAIN:?set CULTUR_API_DOMAIN in Portainer}
     volumes:
       - ./Caddyfile.tunnel:/etc/caddy/Caddyfile:ro
       - ./data/web:/srv/web:ro
