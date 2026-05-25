@@ -1,6 +1,15 @@
-# 502 Bad Gateway em cultur.eqnox.com
+# 502 Bad Gateway (cultur.eqnox.pt / cultur.eqnox.com)
 
 Cloudflare mostra **502** quando o túnel liga ao servidor mas o **origin falha** (porta errada, Caddy em baixo, ou `cultur-web` não está a correr).
+
+**Domínio:** se o browser usa `cultur.eqnox.pt`, as vars Portainer **têm de ser `.pt`**, não `.com`:
+
+```env
+CULTUR_DOMAIN=cultur.eqnox.pt
+CULTUR_API_DOMAIN=api.cultur.eqnox.pt
+```
+
+O Caddy só encaminha pedidos cujo `Host` coincide com essas vars.
 
 ## Checklist no servidor (SSH em 192.168.1.230)
 
@@ -47,10 +56,10 @@ Se falhar `denied` ou `not found`:
 
 ```bash
 curl -sS -o /dev/null -w 'web: %{http_code}\n' \
-  -H 'Host: cultur.eqnox.com' http://127.0.0.1:8081/
+  -H 'Host: cultur.eqnox.pt' http://127.0.0.1:8081/
 
 curl -sS -o /dev/null -w 'api: %{http_code}\n' \
-  -H 'Host: api.cultur.eqnox.com' http://127.0.0.1:8081/backend/health
+  -H 'Host: api.cultur.eqnox.pt' http://127.0.0.1:8081/backend/health
 ```
 
 - **200** aqui + **502** no browser → túnel/porta Cloudflare errada.
@@ -70,8 +79,8 @@ Erros comuns nos logs do Caddy: `dial tcp: lookup cultur-web` ou `connection ref
 Obrigatórias para o Caddy:
 
 ```env
-CULTUR_DOMAIN=cultur.eqnox.com
-CULTUR_API_DOMAIN=api.cultur.eqnox.com
+CULTUR_DOMAIN=cultur.eqnox.pt
+CULTUR_API_DOMAIN=api.cultur.eqnox.pt
 CULTUR_HTTP_PORT=8081
 CULTUR_WEB_IMAGE=ghcr.io/edequinox/cultur-web:main
 ```
