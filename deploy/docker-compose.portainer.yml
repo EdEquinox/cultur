@@ -1,9 +1,9 @@
 # Portainer stack — NO env_file; secrets in Portainer UI only.
 #
-# Web: service "cultur-web" builds Flutter automatically on stack deploy (first time ~10–15 min).
-# Faster option: use image from GitHub Actions — see deploy/docs/PORTAINER.md
+# Web: pulls pre-built image from GitHub (no Flutter build on server — saves ~5 GB disk).
+# Image built by .github/workflows/publish-web-image.yml on each push to main.
 #
-# Git clone must include cultur_app/ + cultur_backend/ (repo root as build context ..)
+# Local Flutter build (needs lots of disk): deploy/docker-compose.portainer-local-build.yml
 
 name: cultur
 
@@ -50,13 +50,8 @@ services:
       - cultur
 
   cultur-web:
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile.web
-      args:
-        CULTUR_DEFAULT_API_URL: ${CULTUR_DEFAULT_API_URL:-}
-        CULTUR_ANDROID_APK_URL: ${CULTUR_ANDROID_APK_URL:-}
-    image: cultur-cultur-web:latest
+    image: ${CULTUR_WEB_IMAGE:-ghcr.io/edequinox/cultur-web:main}
+    pull_policy: always
     restart: unless-stopped
     networks:
       - cultur

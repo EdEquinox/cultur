@@ -1,0 +1,17 @@
+# Optional overlay — build Flutter on the server (~5–10 GB free disk required).
+# Default stack pulls ghcr.io/edequinox/cultur-web:main instead.
+#
+# Portainer: add as second compose file OR merge manually.
+# CLI:
+#   docker compose -f docker-compose.portainer.yml -f docker-compose.portainer-local-build.yml up -d --build
+
+services:
+  cultur-web:
+    image: cultur-cultur-web:latest
+    pull_policy: build
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+      args:
+        CULTUR_DEFAULT_API_URL: ${CULTUR_DEFAULT_API_URL:-}
+        CULTUR_ANDROID_APK_URL: ${CULTUR_ANDROID_APK_URL:-}

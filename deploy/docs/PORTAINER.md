@@ -7,29 +7,20 @@ O Portainer **não substitui**:
 - **Cloudflare Tunnel** (ingress `http://127.0.0.1:8080`)
 - **DNS** (CNAME `cultur` / `api.cultur` → túnel)
 
-## Build automático da web
+## Web: imagem do GitHub (sem build no servidor)
 
-O stack inclui o serviço **`cultur-web`**, que faz `flutter build web` dentro do Docker na primeira vez que fazes deploy (ou redeploy com rebuild). **Não precisas** de `build-web.sh` no servidor.
+O serviço **`cultur-web`** faz **pull** de `ghcr.io/edequinox/cultur-web:main` (construída no GitHub Actions). **Não compila Flutter no teu servidor** — evita encher o disco.
 
-| Modo | Tempo no servidor | Como |
-|------|-------------------|------|
-| **Auto (default)** | ~10–15 min na 1.ª vez | Portainer faz build de `deploy/Dockerfile.web` |
-| **Imagem GitHub** | ~1 min | CI publica `ghcr.io/EdEquinox/cultur-web:main` — ver abaixo |
+1. Push para `main` → workflow **Publish web image**
+2. GitHub → **Packages** → `cultur-web` → tornar **Public** (ou registry privado no Portainer)
+3. Na UI: `CULTUR_WEB_IMAGE=ghcr.io/edequinox/cultur-web:main`
 
-Na UI do Portainer, define também (para o build Flutter):
+Define em GitHub → repo → **Settings → Secrets and variables → Actions → Variables**:
 
-```env
-CULTUR_DEFAULT_API_URL=https://api.cultur.eqnox.com
-CULTUR_ANDROID_APK_URL=https://cultur.eqnox.com/releases/cultur.apk
-```
+- `CULTUR_DEFAULT_API_URL`
+- `CULTUR_ANDROID_APK_URL`
 
-### Modo rápido (imagem pré-construída no GitHub)
-
-A cada push em `main`, o workflow `publish-web-image.yml` constrói e publica a imagem web.
-
-No Portainer, no serviço `cultur-web`, podes trocar temporariamente para só pull (sem build local): edita o stack e usa `image: ghcr.io/EdEquinox/cultur-web:main` e remove o bloco `build:` — ou espera pelo rebuild automático no servidor.
-
-Torna o package **public** em GitHub → Packages → `cultur-web` → Package settings, se o Portainer não conseguir fazer pull.
+Erro `no space left on device`? Ver [`DISK_SPACE.md`](DISK_SPACE.md). Não uses build local sem ~5 GB livres.
 
 ## 1. Repositório Git no Portainer
 
