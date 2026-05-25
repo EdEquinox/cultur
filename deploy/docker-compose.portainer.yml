@@ -1,10 +1,34 @@
-# Portainer stack — NO env_file (all vars from Portainer UI "Environment variables").
-# Still requires repo on disk for build context, Caddyfile, and deploy/data/web.
+# Portainer stack — NO env_file; vars from Portainer UI only.
+# Caddy config is embedded below (no Caddyfile.tunnel bind mount).
 #
-# Compose path: deploy/docker-compose.portainer.yml
-# Copy variables from deploy/portainer.env.example into the stack UI.
+# Required on host (Git stack must clone the full repo):
+#   - cultur_backend/  (API build)
+#   - ${CULTUR_DEPLOY_DIR}/data/web/  (run deploy/scripts/build-web.sh first)
+#
+# Optional in UI: CULTUR_DEPLOY_DIR=/data/compose/XX/deploy (absolute path to deploy/)
 
 name: cultur
+
+configs:
+  cultur_caddyfile:
+    content: |
+      {
+      	auto_https off
+      }
+      http://{$CULTUR_DOMAIN} {
+      	encode gzip zstd
+      	root * /srv/web
+      	try_files {path} /index.html
+      	file_server
+      	handle_path /releases/* {
+      		root * /srv/releases
+      		file_server
+      	}
+      }
+      http://{$CULTUR_API_DOMAIN} {
+      	encode gzip
+      	reverse_proxy cultur-api:8787
+      }
 
 services:
   postgres:
@@ -76,10 +100,12 @@ services:
     environment:
       CULTUR_DOMAIN: ${CULTUR_DOMAIN:?set CULTUR_DOMAIN in Portainer}
       CULTUR_API_DOMAIN: ${CULTUR_API_DOMAIN:?set CULTUR_API_DOMAIN in Portainer}
+    configs:
+      - source: cultur_caddyfile
+        target: /etc/caddy/Caddyfile
     volumes:
-      - ./Caddyfile.tunnel:/etc/caddy/Caddyfile:ro
-      - ./data/web:/srv/web:ro
-      - ./releases:/srv/releases:ro
+      - ${CULTUR_DEPLOY_DIR:-.}/data/web:/srv/web:ro
+      - ${CULTUR_DEPLOY_DIR:-.}/releases:/srv/releases:ro
     depends_on:
       - cultur-api
     networks:
