@@ -1,0 +1,11 @@
+beautifulsoup4
+selenium>=4.15
+cryptography
+fastapi
+httpx
+pydantic
+psycopg[binary]
+pytest
+requests
+sqlalchemy
+uvicorn

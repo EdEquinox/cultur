@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: cultur_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cultur}
+      POSTGRES_USER: ${POSTGRES_USER:-cultur}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-cultur} -d ${POSTGRES_DB:-cultur}
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  cultur-api:
+    build:
+      context: .
+    container_name: cultur_api
+    restart: unless-stopped
+    # MusicBrainz TLS fails on Docker bridge on some Linux hosts; host network fixes it.
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVER_API_SECRET_KEY: ${SERVER_API_SECRET_KEY:-change-me}
+      SERVER_API_PORT: "8787"
+      SERVER_API_DATA_DIR: "/app/data"
+      SERVER_API_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-cultur}:${POSTGRES_PASSWORD:-change-me}@127.0.0.1:5432/${POSTGRES_DB:-cultur}
+      MUSICBRAINZ_APP_NAME: ${MUSICBRAINZ_APP_NAME:-Cultur}
+      MUSICBRAINZ_CONTACT: ${MUSICBRAINZ_CONTACT:-}
+      MUSICBRAINZ_MIN_REQUEST_INTERVAL_SECONDS: ${MUSICBRAINZ_MIN_REQUEST_INTERVAL_SECONDS:-1.1}
+      FANART_API_KEY: ${FANART_API_KEY:-}
+      FANART_CLIENT_KEY: ${FANART_CLIENT_KEY:-}
+      LASTFM_API_KEY: ${LASTFM_API_KEY:-}
+      TMDB_API: ${TMDB_API:-}
+      TMDB_LANG: ${TMDB_LANG:-en-US}
+      OMDB_API_KEY: ${OMDB_API_KEY:-}
+      IGDB_CLIENT_ID: ${IGDB_CLIENT_ID:-}
+      IGDB_CLIENT_SECRET: ${IGDB_CLIENT_SECRET:-}
+      IGDB_LANGUAGE: ${IGDB_LANGUAGE:-en}
+      BGG_API_TOKEN: ${BGG_API_TOKEN:-}
+      BGG_MIN_REQUEST_INTERVAL_SECONDS: ${BGG_MIN_REQUEST_INTERVAL_SECONDS:-2}
+      BGG_HOT_CACHE_TTL_SECONDS: ${BGG_HOT_CACHE_TTL_SECONDS:-3600}
+      DISCOGS_API_KEY: ${DISCOGS_API_KEY:-}
+      DISCOGS_API_SECRET: ${DISCOGS_API_SECRET:-}
+      HARDCOVER_API_TOKEN: ${HARDCOVER_API_TOKEN:-}
+      BOOK_CATALOG_PRIMARY_SOURCE: ${BOOK_CATALOG_PRIMARY_SOURCE:-}
+      PORBASE_ISBN_URL_TEMPLATE: ${PORBASE_ISBN_URL_TEMPLATE:-http://urn.porbase.org/isbn/dc/xml?id={isbn}}
+    volumes:
+      - ./data:/app/data
+
+volumes:
+  postgres-data:

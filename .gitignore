@@ -1,0 +1,40 @@
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+*.iml
+
+# Python (backend)
+**/__pycache__/
+**/.pytest_cache/
+**/.venv/
+*.pyc
+
+# Secrets — never commit
+**/.env
+!**/.env.example
+!**/env.example
+
+# Backend runtime data
+cultur_backend/data/
+
+# Flutter / Dart (app)
+**/.dart_tool/
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+**/build/
+**/coverage/
+
+# Deploy artefacts (built on server or CI)
+deploy/data/web/*
+!deploy/data/web/.gitkeep
+deploy/releases/*
+!deploy/releases/.gitkeep
+!deploy/releases/README.md
+deploy/data/caddy/
+
+# Misc generated dumps
+yamtrack_tree.json
+docs
