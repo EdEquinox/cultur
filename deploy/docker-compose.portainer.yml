@@ -1,0 +1,75 @@
+# Single stack for Portainer (Cloudflare Tunnel + Caddy on 127.0.0.1:8080).
+#
+# Portainer → Stacks → Add stack → Git repository OR Web editor
+# Compose path: deploy/docker-compose.portainer.yml
+# Env: load deploy/.env + cultur_backend/.env (see docs/PORTAINER.md)
+
+name: cultur
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file:
+      - ../cultur_backend/.env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cultur}
+      POSTGRES_USER: ${POSTGRES_USER:-cultur}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-cultur} -d ${POSTGRES_DB:-cultur}
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - cultur
+
+  cultur-api:
+    build:
+      context: ../cultur_backend
+    restart: unless-stopped
+    env_file:
+      - ../cultur_backend/.env
+    environment:
+      SERVER_API_PORT: "8787"
+      SERVER_API_DATA_DIR: /app/data
+      SERVER_API_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-cultur}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-cultur}
+    volumes:
+      - ../cultur_backend/data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8787:8787"
+    networks:
+      - cultur
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${CULTUR_HTTP_PORT:-8080}:80"
+    env_file:
+      - .env
+    environment:
+      CULTUR_DOMAIN: ${CULTUR_DOMAIN}
+      CULTUR_API_DOMAIN: ${CULTUR_API_DOMAIN}
+    volumes:
+      - ./Caddyfile.tunnel:/etc/caddy/Caddyfile:ro
+      - ./data/web:/srv/web:ro
+      - ./releases:/srv/releases:ro
+    depends_on:
+      - cultur-api
+    networks:
+      - cultur
+
+networks:
+  cultur:
+
+volumes:
+  postgres-data:

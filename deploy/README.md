@@ -7,6 +7,7 @@ Stack: **PostgreSQL** + **API** + **Caddy** (HTTPS, static web, APK downloads).
 | Mode | When to use | Docs |
 |------|-------------|------|
 | **Cloudflare Tunnel** | Home server, no open ports | [`docs/CLOUDFLARE_TUNNEL.md`](docs/CLOUDFLARE_TUNNEL.md) |
+| **Portainer** | GUI para o mesmo stack | [`docs/PORTAINER.md`](docs/PORTAINER.md) |
 | **Direct (Caddy + Let's Encrypt)** | Public IP, ports 80/443 open | below |
 
 ```bash
