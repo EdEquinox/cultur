@@ -60,13 +60,14 @@ services:
     pull_policy: always
     restart: unless-stopped
     healthcheck:
+      # /health does not query Postgres; /backend/health fails if DB password/URL is wrong
       test:
         - CMD-SHELL
-        - python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/backend/health')"
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
+        - python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/health')"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
     environment:
       SERVER_API_SECRET_KEY: ${SERVER_API_SECRET_KEY:?set SERVER_API_SECRET_KEY in Portainer}
       SERVER_API_PORT: "8787"
@@ -117,7 +118,7 @@ services:
         target: /etc/caddy/Caddyfile
     depends_on:
       cultur-api:
-        condition: service_healthy
+        condition: service_started
       cultur-web:
         condition: service_healthy
     networks:
