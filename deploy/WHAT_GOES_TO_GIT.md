@@ -12,8 +12,8 @@ O ficheiro `docker-compose.portainer.yml` **só descreve** o deploy. O `git push
 | `deploy/.env.example` | Modelo deploy |
 | `deploy/data/web/.gitkeep` | Pasta vazia (placeholder) |
 | `deploy/releases/.gitkeep` | Pasta APK |
-| `cultur_backend/` | Código da API (build Docker) |
-| `cultur_app/` | Código Flutter (build no servidor) |
+| `cultur_backend/` | Código da API (build no GitHub CI → `cultur-api` image) |
+| `cultur_app/` | Código Flutter (build no GitHub CI → `cultur-web` image) |
 
 ## Não vai no push (`.gitignore` — normal)
 
@@ -25,17 +25,17 @@ O ficheiro `docker-compose.portainer.yml` **só descreve** o deploy. O `git push
 | `deploy/releases/*.apk` | Incluído na imagem `cultur-web` do GHCR (CI) |
 | `cultur_backend/data/` | Runtime da API |
 
-## O que o Portainer precisa no disco (clone completo)
+## O que o Portainer precisa no servidor
+
+Só o ficheiro compose (Git ou colado na UI) + variáveis na UI. **Não** precisa de clonar `cultur_app/` nem `cultur_backend/` para build.
 
 ```
-cultur/                    ← raiz do git clone
-├── cultur_backend/        ← build context ../cultur_backend
-├── cultur_app/            ← flutter build web
-└── deploy/
-    ├── docker-compose.portainer.yml
-    ├── data/web/          ← gerado por build-web.sh (não vem do Git)
-    └── releases/          ← opcional: cultur.apk
+deploy/docker-compose.portainer.yml   ← stack Portainer
 ```
 
-**Compose path no Portainer:** `deploy/docker-compose.portainer.yml`  
-**Variável útil:** `CULTUR_DEPLOY_DIR=/caminho/absoluto/para/cultur/deploy`
+Imagens puxadas automaticamente:
+
+- `ghcr.io/edequinox/cultur-web:main`
+- `ghcr.io/edequinox/cultur-api:main`
+
+Dados persistentes: volumes Docker `postgres-data` e `cultur-api-data`.

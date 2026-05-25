@@ -1,9 +1,8 @@
 # Portainer stack — NO env_file; secrets in Portainer UI only.
-#
-# Web + APK: pulls pre-built image from GitHub (no Flutter build on server).
-# Includes https://<domain>/releases/cultur.apk — built in CI (publish-web-image.yml).
-#
-# Local Flutter build (needs lots of disk): deploy/docker-compose.portainer-local-build.yml
+# Pulls pre-built images from GHCR (no build on server):
+#   ghcr.io/edequinox/cultur-web:main  — web + APK (publish-web-image.yml)
+#   ghcr.io/edequinox/cultur-api:main  — API (publish-api-image.yml)
+# Only Postgres runs as a stock image; data in Docker volumes.
 
 name: cultur
 
@@ -57,9 +56,17 @@ services:
       - cultur
 
   cultur-api:
-    build:
-      context: ../cultur_backend
+    image: ${CULTUR_API_IMAGE:-ghcr.io/edequinox/cultur-api:main}
+    pull_policy: always
     restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/backend/health')"
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     environment:
       SERVER_API_SECRET_KEY: ${SERVER_API_SECRET_KEY:?set SERVER_API_SECRET_KEY in Portainer}
       SERVER_API_PORT: "8787"
@@ -88,7 +95,7 @@ services:
       BOOK_CATALOG_PRIMARY_SOURCE: ${BOOK_CATALOG_PRIMARY_SOURCE:-hardcover}
       PORBASE_ISBN_URL_TEMPLATE: ${PORBASE_ISBN_URL_TEMPLATE:-http://urn.porbase.org/isbn/dc/xml?id={isbn}}
     volumes:
-      - ../cultur_backend/data:/app/data
+      - cultur-api-data:/app/data
     depends_on:
       postgres:
         condition: service_healthy
@@ -110,7 +117,7 @@ services:
         target: /etc/caddy/Caddyfile
     depends_on:
       cultur-api:
-        condition: service_started
+        condition: service_healthy
       cultur-web:
         condition: service_healthy
     networks:
@@ -121,3 +128,4 @@ networks:
 
 volumes:
   postgres-data:
+  cultur-api-data:

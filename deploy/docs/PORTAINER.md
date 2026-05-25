@@ -7,26 +7,32 @@ O Portainer **não substitui**:
 - **Cloudflare Tunnel** (ingress `http://127.0.0.1:8080`)
 - **DNS** (CNAME `cultur` / `api.cultur` → túnel)
 
-## Web: imagem do GitHub (sem build no servidor)
+## Imagens GHCR (sem build no servidor)
 
-O serviço **`cultur-web`** faz **pull** de `ghcr.io/edequinox/cultur-web:main` (construída no GitHub Actions). Inclui a **app web** e o **APK** em `/releases/cultur.apk`. **Não compila Flutter no teu servidor**.
+| Serviço | Imagem | Workflow |
+|---------|--------|----------|
+| `cultur-web` | `ghcr.io/edequinox/cultur-web:main` | Publish web image (+ APK) |
+| `cultur-api` | `ghcr.io/edequinox/cultur-api:main` | Publish API image |
 
-1. Push para `main` → workflow **Publish web image**
-2. GitHub → **Packages** → `cultur-web` → tornar **Public** (ou registry privado no Portainer)
-3. Na UI: `CULTUR_WEB_IMAGE=ghcr.io/edequinox/cultur-web:main`
+1. Push para `main` → workflows publicam as imagens
+2. GitHub → **Packages** → `cultur-web` e `cultur-api` → **Public** (ou registry privado no Portainer)
+3. Na UI Portainer:
 
-Define em GitHub → repo → **Settings → Secrets and variables → Actions → Variables**:
+```env
+CULTUR_WEB_IMAGE=ghcr.io/edequinox/cultur-web:main
+CULTUR_API_IMAGE=ghcr.io/edequinox/cultur-api:main
+```
+
+Para a web, define em GitHub → **Settings → Secrets and variables → Actions → Variables**:
 
 - `CULTUR_DEFAULT_API_URL`
 - `CULTUR_ANDROID_APK_URL`
 
-Erro `no space left on device`? Ver [`DISK_SPACE.md`](DISK_SPACE.md). Não uses build local sem ~5 GB livres.
+Secrets da API (TMDB, etc.) continuam só na **UI do Portainer** — não vão na imagem.
 
-## 1. Repositório Git no Portainer
+Erro `no space left on device`? Ver [`DISK_SPACE.md`](DISK_SPACE.md).
 
-O clone tem de ser o **repo completo** (`cultur_app/`, `cultur_backend/`, `deploy/`), não só o ficheiro compose.
-
-## 2. Criar stack no Portainer
+## 1. Criar stack no Portainer
 
 **Stacks** → **Add stack** → nome `cultur`
 
@@ -44,9 +50,9 @@ Ativa **Pull and redeploy** se quiseres updates automáticos ao fazer push.
 
 Copia o conteúdo de `deploy/docker-compose.portainer.yml` para o editor.
 
-**Importante:** o “stack root” deve ser a pasta `deploy/` do repo (onde estão `Caddyfile.tunnel`, `data/web`, `.env`). No Portainer, ao usar Git, define o **Compose path** como acima; os caminhos `../cultur_backend` resolvem a partir de `deploy/`.
+Com Git, basta o **Compose path** `deploy/docker-compose.portainer.yml`. Não há `build:` no stack — não precisas de `cultur_app/` nem `cultur_backend/` no disco do servidor.
 
-## 3. Variáveis de ambiente (só na UI)
+## 2. Variáveis de ambiente (só na UI)
 
 O ficheiro `deploy/docker-compose.portainer.yml` **não usa `env_file:`** — as variáveis vêm **apenas** da secção **Environment variables** do stack no Portainer.
 
@@ -58,13 +64,20 @@ O ficheiro `deploy/docker-compose.portainer.yml` **não usa `env_file:`** — as
 
 Não uses o campo “Load variables from .env file” a menos que esse ficheiro exista **no caminho do stack no servidor**. A UI sozinha chega.
 
-## 4. Deploy
+## 3. Deploy
 
-**Deploy the stack**. A primeira vez faz build de **`cultur-web`** (Flutter) e **`cultur-api`** — pode demorar 15–20 minutos no total.
+**Deploy the stack**. Só faz **pull** das imagens (segundos), se os packages GHCR existirem e forem públicos.
 
 Logs úteis: `cultur-cultur-web-1`, `cultur-cultur-api-1`, `cultur-caddy-1`.
 
-## 5. Cloudflare (igual)
+Variáveis de imagem:
+
+```env
+CULTUR_WEB_IMAGE=ghcr.io/edequinox/cultur-web:main
+CULTUR_API_IMAGE=ghcr.io/edequinox/cultur-api:main
+```
+
+## 4. Cloudflare (igual)
 
 Túnel **Tunel-HA** → **Published application routes** → ambos para `http://127.0.0.1:<CULTUR_HTTP_PORT>` (ex. `8081` se mudaste a porta no Portainer).
 
@@ -84,21 +97,12 @@ sudo rm -rf /data/compose/70/deploy/Caddyfile.tunnel
 
 2. Usa o `docker-compose.portainer.yml` atualizado (Caddy embutido no compose — já não monta `Caddyfile.tunnel`).
 
-3. Com o stack novo, **`data/web` no host já não é obrigatório** — a web corre no contentor `cultur-web`.
+3. Com o stack novo, a web e a API correm só em imagens GHCR; dados da API em volume `cultur-api-data`.
 
-4. Na UI do Portainer, opcionalmente:
+## 5. Atualizar depois
 
-```env
-CULTUR_DEPLOY_DIR=/data/compose/70/deploy
-```
-
-(caminho absoluto à pasta `deploy` do clone)
-
-## 6. Atualizar depois
-
-1. `git pull` em `/opt/cultur` (ou redeploy automático do Portainer)
-2. `./deploy/scripts/build-web.sh` quando mudares a app Flutter
-3. No Portainer: **Pull and redeploy** ou **Recreate** no stack `cultur`
+1. Push para `main` → CI publica novas tags `:main`
+2. No Portainer: **Pull and redeploy** no stack `cultur`
 
 ## Portainer vs `docker compose` na CLI
 
