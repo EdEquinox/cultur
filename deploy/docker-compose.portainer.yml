@@ -1,25 +1,10 @@
 # Portainer stack — NO env_file; secrets in Portainer UI only.
-# Pulls pre-built images from GHCR (no build on server):
-#   ghcr.io/edequinox/cultur-web:main  — web + APK (publish-web-image.yml)
-#   ghcr.io/edequinox/cultur-api:main  — API (publish-api-image.yml)
-# Only Postgres runs as a stock image; data in Docker volumes.
+# One port per service (same pattern as music/home on 192.168.1.230):
+#   cultur.eqnox.pt      → http://192.168.1.230:${CULTUR_WEB_PORT}  (cultur-web)
+#   api.cultur.eqnox.pt  → http://192.168.1.230:${CULTUR_API_PORT}  (cultur-api)
+# No Caddy — no Host header routing.
 
 name: cultur
-
-configs:
-  cultur_caddyfile:
-    content: |
-      {
-      	auto_https off
-      }
-      http://{$CULTUR_DOMAIN} {
-      	encode gzip zstd
-      	reverse_proxy cultur-web:80
-      }
-      http://{$CULTUR_API_DOMAIN} {
-      	encode gzip
-      	reverse_proxy cultur-api:8787
-      }
 
 services:
   postgres:
@@ -46,6 +31,8 @@ services:
     image: ${CULTUR_WEB_IMAGE:-ghcr.io/edequinox/cultur-web:main}
     pull_policy: always
     restart: unless-stopped
+    ports:
+      - "${CULTUR_WEB_PORT:-8081}:80"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
       interval: 15s
@@ -60,7 +47,6 @@ services:
     pull_policy: always
     restart: unless-stopped
     healthcheck:
-      # /health does not query Postgres; /backend/health fails if DB password/URL is wrong
       test:
         - CMD-SHELL
         - python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/health')"
@@ -101,26 +87,7 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "127.0.0.1:8787:8787"
-    networks:
-      - cultur
-
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:${CULTUR_HTTP_PORT:-8080}:80"
-    environment:
-      CULTUR_DOMAIN: ${CULTUR_DOMAIN:?set CULTUR_DOMAIN in Portainer}
-      CULTUR_API_DOMAIN: ${CULTUR_API_DOMAIN:?set CULTUR_API_DOMAIN in Portainer}
-    configs:
-      - source: cultur_caddyfile
-        target: /etc/caddy/Caddyfile
-    depends_on:
-      cultur-api:
-        condition: service_started
-      cultur-web:
-        condition: service_healthy
+      - "${CULTUR_API_PORT:-8787}:8787"
     networks:
       - cultur
 

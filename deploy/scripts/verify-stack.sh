@@ -1,32 +1,36 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+web_port="${CULTUR_WEB_PORT:-8081}"
+api_port="${CULTUR_API_PORT:-8787}"
+host_ip="${CULTUR_HOST_IP:-127.0.0.1}"
+
 echo "=== 1. Containers ==="
 docker ps --filter name=cultur --format '  {{.Names}} — {{.Status}}' || echo "  No cultur containers"
 
 echo ""
-echo "=== 2. Caddy local (port 8080) ==="
-http_port="${CULTUR_HTTP_PORT:-8080}"
-domain="${CULTUR_DOMAIN:-cultur.eqnox.com}"
-api_domain="${CULTUR_API_DOMAIN:-api.cultur.eqnox.com}"
+echo "=== 2. Direct ports (no Caddy) ==="
+web_bytes="$(curl -sS "http://${host_ip}:${web_port}/" 2>/dev/null | wc -c || echo 0)"
+web_code="$(curl -sS -o /dev/null -w '%{http_code}' "http://${host_ip}:${web_port}/" 2>/dev/null || echo 000)"
+js_bytes="$(curl -sS "http://${host_ip}:${web_port}/main.dart.js" 2>/dev/null | wc -c || echo 0)"
+api_body="$(curl -sS "http://${host_ip}:${api_port}/backend/health" 2>/dev/null || echo FAIL)"
 
-web_code="$(curl -sS -o /dev/null -w '%{http_code}' -H "Host: ${domain}" "http://127.0.0.1:${http_port}/" 2>/dev/null || echo 000)"
-api_body="$(curl -sS -H "Host: ${api_domain}" "http://127.0.0.1:${http_port}/backend/health" 2>/dev/null || echo FAIL)"
-echo "  Web  http://127.0.0.1:${http_port}/ (Host: ${domain}) → HTTP ${web_code}"
-echo "  API  → ${api_body}"
+echo "  Web  http://${host_ip}:${web_port}/ → HTTP ${web_code}, ${web_bytes} bytes"
+echo "  JS   http://${host_ip}:${web_port}/main.dart.js → ${js_bytes} bytes (expect millions)"
+echo "  API  http://${host_ip}:${api_port}/backend/health → ${api_body}"
 
 echo ""
-echo "=== 3. Web files in Caddy container ==="
-caddy="$(docker ps --format '{{.Names}}' | grep -E 'cultur.*caddy' | head -1 || true)"
-if [[ -n "$caddy" ]]; then
-  docker exec "$caddy" ls -la /srv/web/index.html /srv/web/main.dart.js 2>&1 | sed 's/^/  /' || echo "  MISSING — wrong volume or CULTUR_DEPLOY_DIR"
+echo "=== 3. cultur-web container ==="
+web_c="$(docker ps --format '{{.Names}}' | grep -E 'cultur.*cultur-web' | head -1 || true)"
+if [[ -n "$web_c" ]]; then
+  docker exec "$web_c" ls -lh /usr/share/nginx/html/index.html /usr/share/nginx/html/main.dart.js 2>&1 | sed 's/^/  /'
 else
-  echo "  Caddy container not found"
+  echo "  cultur-web not running"
 fi
 
 echo ""
-echo "=== 4. Public DNS ==="
-for host in "$domain" "$api_domain"; do
+echo "=== 4. Public DNS (optional) ==="
+for host in cultur.eqnox.pt api.cultur.eqnox.pt; do
   rec="$(dig +short "$host" CNAME 2>/dev/null | head -1)"
   a="$(dig +short "$host" A 2>/dev/null | head -1)"
   if [[ -n "$rec" ]]; then
@@ -34,13 +38,6 @@ for host in "$domain" "$api_domain"; do
   elif [[ -n "$a" ]]; then
     echo "  OK $host → A $a"
   else
-    echo "  FAIL $host → no DNS (browser cannot open https://${host})"
+    echo "  ? $host → no DNS"
   fi
-done
-
-echo ""
-echo "=== 5. Public HTTPS (if DNS exists) ==="
-for host in "$domain" "$api_domain"; do
-  code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 12 "https://${host}/" 2>/dev/null || echo 000)"
-  echo "  https://${host}/ → HTTP ${code}"
 done

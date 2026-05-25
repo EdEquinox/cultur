@@ -12,8 +12,8 @@ credentials-file: /etc/cloudflared/TUNNEL_ID.json
 
 ingress:
   # Both hostnames hit Caddy on :80; Caddy routes by Host header (see Caddyfile.tunnel).
-  - hostname: cultur.eqnox.com
-    service: http://127.0.0.1:8080
-  - hostname: api.cultur.eqnox.com
-    service: http://127.0.0.1:8080
+  - hostname: cultur.eqnox.pt
+    service: http://192.168.1.230:8081
+  - hostname: api.cultur.eqnox.pt
+    service: http://192.168.1.230:8081
   - service: http_status:404

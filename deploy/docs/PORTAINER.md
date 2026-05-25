@@ -60,7 +60,7 @@ O ficheiro `deploy/docker-compose.portainer.yml` **não usa `env_file:`** — as
 2. Copia as linhas para Portainer → stack `cultur` → **Environment variables** (formato `KEY=value`, uma por linha)
 3. Edita passwords e API keys
 
-**Obrigatórias:** `POSTGRES_PASSWORD`, `SERVER_API_SECRET_KEY`, `CULTUR_DOMAIN`, `CULTUR_API_DOMAIN`, `MUSICBRAINZ_CONTACT`
+**Obrigatórias:** `POSTGRES_PASSWORD`, `SERVER_API_SECRET_KEY`, `MUSICBRAINZ_CONTACT`, `CULTUR_WEB_PORT`, `CULTUR_API_PORT`
 
 Não uses o campo “Load variables from .env file” a menos que esse ficheiro exista **no caminho do stack no servidor**. A UI sozinha chega.
 
@@ -79,7 +79,14 @@ CULTUR_API_IMAGE=ghcr.io/edequinox/cultur-api:main
 
 ## 4. Cloudflare (igual)
 
-Túnel **Tunel-HA** → **Published application routes** → ambos para `http://127.0.0.1:<CULTUR_HTTP_PORT>` (ex. `8081` se mudaste a porta no Portainer).
+Túnel **Tunel-HA** → **Published application routes** → **uma porta por serviço** (como `music` / `home`):
+
+```text
+cultur.eqnox.pt      → http://192.168.1.230:8081   (web)
+api.cultur.eqnox.pt  → http://192.168.1.230:8787   (API — porta diferente)
+```
+
+Sem Caddy no stack Portainer — não precisas de `CULTUR_DOMAIN` / `CULTUR_API_DOMAIN`.
 
 DNS: CNAME na HostPapa ou zona Cloudflare — ver [`CLOUDFLARE_TUNNEL.md`](CLOUDFLARE_TUNNEL.md).
 
