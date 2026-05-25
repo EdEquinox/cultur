@@ -1,11 +1,14 @@
-# Portainer stack — NO env_file; vars from Portainer UI only.
-# Caddy config is embedded below (no Caddyfile.tunnel bind mount).
+# Portainer stack — NO env_file; all secrets via Portainer UI.
+# Caddy config is embedded (no Caddyfile bind mount).
 #
-# Required on host (Git stack must clone the full repo):
-#   - cultur_backend/  (API build)
-#   - ${CULTUR_DEPLOY_DIR}/data/web/  (run deploy/scripts/build-web.sh first)
+# Git push sends THIS FILE + scripts + cultur_backend/ + cultur_app/ — NOT:
+#   deploy/.env, deploy/data/web/*, deploy/releases/*.apk (see deploy/WHAT_GOES_TO_GIT.md)
 #
-# Optional in UI: CULTUR_DEPLOY_DIR=/data/compose/XX/deploy (absolute path to deploy/)
+# On the server you MUST:
+#   1. git clone full repo (not only this yaml)
+#   2. ./deploy/scripts/build-web.sh  → creates deploy/data/web/
+#   3. Set vars in Portainer from deploy/portainer.env.example
+#   4. Optional: CULTUR_DEPLOY_DIR=/absolute/path/to/cultur/deploy
 
 name: cultur
 

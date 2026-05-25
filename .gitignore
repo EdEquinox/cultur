@@ -37,4 +37,6 @@ deploy/data/caddy/
 
 # Misc generated dumps
 yamtrack_tree.json
-docs
+
+# DB schema docs at repo root only (do not ignore deploy/docs/)
+/docs/
