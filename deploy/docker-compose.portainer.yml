@@ -1,7 +1,7 @@
 # Portainer stack — NO env_file; secrets in Portainer UI only.
 #
-# Web: pulls pre-built image from GitHub (no Flutter build on server — saves ~5 GB disk).
-# Image built by .github/workflows/publish-web-image.yml on each push to main.
+# Web + APK: pulls pre-built image from GitHub (no Flutter build on server).
+# Includes https://<domain>/releases/cultur.apk — built in CI (publish-web-image.yml).
 #
 # Local Flutter build (needs lots of disk): deploy/docker-compose.portainer-local-build.yml
 
@@ -15,13 +15,7 @@ configs:
       }
       http://{$CULTUR_DOMAIN} {
       	encode gzip zstd
-      	handle_path /releases/* {
-      		root * /srv/releases
-      		file_server
-      	}
-      	handle {
-      		reverse_proxy cultur-web:80
-      	}
+      	reverse_proxy cultur-web:80
       }
       http://{$CULTUR_API_DOMAIN} {
       	encode gzip
@@ -53,6 +47,12 @@ services:
     image: ${CULTUR_WEB_IMAGE:-ghcr.io/edequinox/cultur-web:main}
     pull_policy: always
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
       - cultur
 
@@ -108,11 +108,11 @@ services:
     configs:
       - source: cultur_caddyfile
         target: /etc/caddy/Caddyfile
-    volumes:
-      - ${CULTUR_DEPLOY_DIR:-.}/releases:/srv/releases:ro
     depends_on:
-      - cultur-api
-      - cultur-web
+      cultur-api:
+        condition: service_started
+      cultur-web:
+        condition: service_healthy
     networks:
       - cultur
 

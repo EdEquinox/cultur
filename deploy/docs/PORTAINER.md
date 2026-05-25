@@ -9,7 +9,7 @@ O Portainer **não substitui**:
 
 ## Web: imagem do GitHub (sem build no servidor)
 
-O serviço **`cultur-web`** faz **pull** de `ghcr.io/edequinox/cultur-web:main` (construída no GitHub Actions). **Não compila Flutter no teu servidor** — evita encher o disco.
+O serviço **`cultur-web`** faz **pull** de `ghcr.io/edequinox/cultur-web:main` (construída no GitHub Actions). Inclui a **app web** e o **APK** em `/releases/cultur.apk`. **Não compila Flutter no teu servidor**.
 
 1. Push para `main` → workflow **Publish web image**
 2. GitHub → **Packages** → `cultur-web` → tornar **Public** (ou registry privado no Portainer)
@@ -66,7 +66,7 @@ Logs úteis: `cultur-cultur-web-1`, `cultur-cultur-api-1`, `cultur-caddy-1`.
 
 ## 5. Cloudflare (igual)
 
-Túnel **Tunel-HA** → **Published application routes** → ambos para `http://127.0.0.1:8080`.
+Túnel **Tunel-HA** → **Published application routes** → ambos para `http://127.0.0.1:<CULTUR_HTTP_PORT>` (ex. `8081` se mudaste a porta no Portainer).
 
 DNS: CNAME na HostPapa ou zona Cloudflare — ver [`CLOUDFLARE_TUNNEL.md`](CLOUDFLARE_TUNNEL.md).
 

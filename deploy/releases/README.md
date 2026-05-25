@@ -1,5 +1,7 @@
-# Release APKs
+# Release APKs (optional local override)
 
-Place your signed release APK here as `cultur.apk` (or update `CULTUR_ANDROID_APK_URL` in `deploy/.env`).
+Production: the APK is baked into the `ghcr.io/edequinox/cultur-web:main` image at
+`/releases/cultur.apk` (built in GitHub Actions). No manual copy needed on the server.
 
-This directory is served at `https://<your-domain>/releases/`.
+This folder is only for local/dev overrides if you mount it in `docker-compose.yml`
+(not used by the default Portainer stack).

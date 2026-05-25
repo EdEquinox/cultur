@@ -1,4 +1,4 @@
-name: Publish web image
+name: Publish web image (+ APK)
 
 on:
   push:

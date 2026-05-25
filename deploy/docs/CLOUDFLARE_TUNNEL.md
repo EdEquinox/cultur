@@ -28,10 +28,10 @@ Use **Published application routes**, not **Hostname routes**.
 
 | Subdomain / host | Service type | URL |
 |------------------|--------------|-----|
-| `cultur` @ `eqnox.com` | HTTP | `http://127.0.0.1:8080` |
-| `api.cultur` @ `eqnox.com` | HTTP | `http://127.0.0.1:8080` |
+| `cultur` @ `eqnox.com` | HTTP | `http://127.0.0.1:8081` (or your `CULTUR_HTTP_PORT`) |
+| `api.cultur` @ `eqnox.com` | HTTP | `http://127.0.0.1:8081` |
 
-Port **8080** is the default (`CULTUR_HTTP_PORT` in `deploy/.env`) so Caddy does not fight with nginx/Home Assistant on `:80`.
+Set `CULTUR_HTTP_PORT` in Portainer to the port Caddy uses (e.g. **8081** if 8080 is busy). The Cloudflare tunnel must use the **same** port on `127.0.0.1`.
 
 Cloudflare creates the DNS CNAME **only if** the zone `eqnox.com` is managed in Cloudflare DNS.
 
