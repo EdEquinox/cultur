@@ -19,6 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Lowercase owner for GHCR tag
+        run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -31,8 +34,8 @@ jobs:
           file: deploy/Dockerfile.web
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/cultur-web:main
-            ghcr.io/${{ github.repository_owner }}/cultur-web:${{ github.sha }}
+            ghcr.io/${{ env.OWNER_LC }}/cultur-web:main
+            ghcr.io/${{ env.OWNER_LC }}/cultur-web:${{ github.sha }}
           build-args: |
             CULTUR_DEFAULT_API_URL=${{ vars.CULTUR_DEFAULT_API_URL }}
             CULTUR_ANDROID_APK_URL=${{ vars.CULTUR_ANDROID_APK_URL }}
